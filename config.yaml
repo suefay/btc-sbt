@@ -1,0 +1,29 @@
+node:
+  rpc_url: 34.193.67.152:8332
+  rpc_user: bitcoin
+  rpc_pass: bitcoin
+  net_version: 1 # 0:mainnet, 1:testnet, 2:signet
+
+unisat:
+  api: https://api-testnet.unisat.io/wallet-v4
+
+indexer:
+  interval: 1s # indexer interval
+
+db:
+  path: 
+
+key_store:
+  path: 
+
+fee_rate: 2
+
+general:
+  retries: 10 # retry count
+  interval: 500ms # retry interval
+
+server:
+  listener_address: 0.0.0.0:80
+
+log:
+  level: 4 # 1:fatal, 2:error, 3:warning, 4:info, 5:debug, 6:trace
