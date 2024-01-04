@@ -1,4 +1,8 @@
 .vscode
-.DS_Store
+
+.btc-sbt
+out
 
 keystore.txt
+
+.DS_Store

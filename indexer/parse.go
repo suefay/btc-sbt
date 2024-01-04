@@ -22,18 +22,33 @@ func (i *Indexer) parseBTCSBTProtocol(blockHeight int64, block *wire.MsgBlock) e
 
 // parseBTCSBTProtocolPerTx parses the potential BTC-SBT protocol data in the given tx
 func (i *Indexer) parseBTCSBTProtocolPerTx(tx *wire.MsgTx, blockHeight int64, blockHash chainhash.Hash, txIndex int) error {
+	parsedOps := make([]protocol.Operation, 0)
+
 	for _, in := range tx.TxIn {
-		if basics.IsTapscriptWitness(in.Witness) {
-			envelope := i.Parser.GetEnvelope(in.Witness[1])
-			if envelope != nil {
-				ops := i.Parser.GetOps(envelope.Payload)
-				if len(ops) > 0 {
-					err := i.onBTCSBTProtocol(ops, tx, blockHeight, blockHash, txIndex)
-					if err != nil {
-						return err
-					}
-				}
+		ops := i.parseBTCSBTProtocolFromWitness(in.Witness)
+		if len(ops) > 0 {
+			parsedOps = append(parsedOps, ops...)
+			if len(parsedOps) >= protocol.BULK_OPERATION_COUNT_PER_TX {
+				parsedOps = parsedOps[0:protocol.BULK_OPERATION_COUNT_PER_TX]
+
+				break
 			}
+		}
+	}
+
+	if len(parsedOps) > 0 {
+		return i.onBTCSBTProtocol(parsedOps, tx, blockHeight, blockHash, txIndex)
+	}
+
+	return nil
+}
+
+// parseBTCSBTProtocolFromWitness parses the potential BTC-SBT protocol data from the given witness
+func (i *Indexer) parseBTCSBTProtocolFromWitness(witness wire.TxWitness) []protocol.Operation {
+	if basics.IsTapscriptWitness(witness) {
+		envelope := i.Parser.GetEnvelope(witness[1])
+		if envelope != nil {
+			return i.Parser.GetOps(envelope.Payload)
 		}
 	}
 
@@ -41,22 +56,21 @@ func (i *Indexer) parseBTCSBTProtocolPerTx(tx *wire.MsgTx, blockHeight int64, bl
 }
 
 // onBTCSBTProtocol performs the corresponding handling for the given protocol operations
-func (i *Indexer) onBTCSBTProtocol(ops []protocol.Operation, tx *wire.MsgTx, blockHeight int64, blockHash chainhash.Hash, txIndex int) error {
+func (i *Indexer) onBTCSBTProtocol(ops protocol.Operations, tx *wire.MsgTx, blockHeight int64, blockHash chainhash.Hash, txIndex int) error {
 	i.Logger.Infof("protocol ops found, block: %d, tx: %s", blockHeight, tx.TxHash())
 
-	context := i.buildSMContext(blockHeight, blockHash, txIndex, tx)
+	context := i.buildSMContext(blockHeight, blockHash, txIndex, tx, ops.ContainIssue())
 
 	return i.StateMachine.HandleOps(context, ops)
 }
 
 // buildSMContext builds the execution context for the state machine
-func (i *Indexer) buildSMContext(blockHeight int64, blockHash chainhash.Hash, txIndex int, tx *wire.MsgTx) *sm.Context {
-	var firstTxOutAddr = ""
+func (i *Indexer) buildSMContext(blockHeight int64, blockHash chainhash.Hash, txIndex int, tx *wire.MsgTx, containIssueOp bool) *sm.Context {
+	opOutAddr := ""
 
-	addr, err := basics.GetAddressFromPkScript(tx.TxOut[0].PkScript, i.NetParams)
-	if err == nil {
-		firstTxOutAddr = addr.EncodeAddress()
+	if containIssueOp {
+		opOutAddr = i.Parser.ParseIssuerAddress(tx)
 	}
 
-	return sm.NewContext(blockHeight, blockHash, txIndex, tx, firstTxOutAddr)
+	return sm.NewContext(blockHeight, blockHash, txIndex, tx, opOutAddr)
 }

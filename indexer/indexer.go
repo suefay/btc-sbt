@@ -63,7 +63,7 @@ func NewIndexer(config *config.Config) (*Indexer, error) {
 
 	logger.Logger.SetLevel(logrus.Level(config.LogLevel))
 
-	parser := protocol.NewParser()
+	parser := protocol.NewParser(netParams)
 
 	store, err := store.NewStore(config.DBPath)
 	if err != nil {

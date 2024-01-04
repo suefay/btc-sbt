@@ -28,7 +28,14 @@ const (
 	// The issuer is identified by the first output
 	ISSUER_OUTPUT_INDEX = 0
 
-	// Range of the symbol size in bytes
+	// Bulk operation count per tx
+	BULK_OPERATION_COUNT_PER_TX = 10
+)
+
+const (
+	// Minimum size of the symbol in bytes
 	MIN_SYMBOL_LEN = 3
+
+	// Miximum size of the symbol in bytes
 	MAX_SYMBOL_LEN = 8
 )

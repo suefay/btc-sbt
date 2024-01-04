@@ -15,16 +15,16 @@ func NewParams(activationHeight int64) *Params {
 var (
 	// MainNetParams is the params for the mainnet network
 	MainNetParams = Params{
-		ActivationBlockHeight: 823000,
+		ActivationBlockHeight: 824400,
 	}
 
 	// TestNetParams is the params for the testnet network
 	TestNetParams = Params{
-		ActivationBlockHeight: 2568000,
+		ActivationBlockHeight: 2570700,
 	}
 
 	// SignetParams is the params for the signet network
 	SigNetParams = Params{
-		ActivationBlockHeight: 175000,
+		ActivationBlockHeight: 176800,
 	}
 )

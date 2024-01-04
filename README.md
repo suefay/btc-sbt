@@ -2,7 +2,7 @@
 
 The [BTC-SBT](https://btc-sbt.gitbook.io/btc-sbt-protocol) protocol implementation along with the Command Line Interface.
 
-## Getting started
+## Getting Started
 
 ### Configuration
 

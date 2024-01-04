@@ -4,15 +4,25 @@ import (
 	"fmt"
 
 	"github.com/tidwall/gjson"
+
+	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/txscript"
+	"github.com/btcsuite/btcd/wire"
+
+	"btc-sbt/stacks/basics"
 )
 
 // Parser defines the parser for the BTC-SBT protocol
 type Parser struct {
+	NetParams *chaincfg.Params // net params
 }
 
 // NewParser creates a new Parser instance
-func NewParser() *Parser {
-	return &Parser{}
+func NewParser(netParams *chaincfg.Params) *Parser {
+	return &Parser{
+		NetParams: netParams,
+	}
 }
 
 // GetEnvelope gets the BTC-SBT protocol envelope from the given witness script
@@ -61,6 +71,32 @@ func (p *Parser) ToMintOp(data []byte) (*MintOperation, error) {
 	err := op.Unmarshal(data)
 
 	return &op, err
+}
+
+// ParseIssuerAddress parses the issuer address from the given tx.
+// Assume that the tx contains the issue operation(s)
+func (p *Parser) ParseIssuerAddress(tx *wire.MsgTx) string {
+	if len(tx.TxOut) <= ISSUER_OUTPUT_INDEX {
+		return ""
+	}
+
+	pkScript := tx.TxOut[ISSUER_OUTPUT_INDEX].PkScript
+
+	if len(pkScript) > 1 && pkScript[0] == txscript.OP_RETURN {
+		addr, err := btcutil.DecodeAddress(string(pkScript[2:]), p.NetParams)
+		if err != nil {
+			return ""
+		}
+
+		return addr.EncodeAddress()
+	}
+
+	addr, err := basics.GetAddressFromPkScript(pkScript, p.NetParams)
+	if err == nil {
+		return addr.EncodeAddress()
+	}
+
+	return ""
 }
 
 // getOpFromJSON parses the BTC-SBT protocol operation from the given JSON data

@@ -193,3 +193,17 @@ func (op MintOperation) Hash() ([]byte, error) {
 
 	return utils.SHA256(bz), nil
 }
+
+// Operations defines a set of operations
+type Operations []Operation
+
+// ContainIssue returns true if the operations contain the issue operation, false otherwise
+func (ops Operations) ContainIssue() bool {
+	for _, op := range ops {
+		if op.Type() == OP_ISSUE {
+			return true
+		}
+	}
+
+	return false
+}

@@ -57,7 +57,7 @@ func (sm *StateMachine) HandleIssue(ctx *Context, op *protocol.IssueOperation) e
 	sbts := types.NewSBTsFromIssueOp(op)
 
 	sbts.Sequence = seq
-	sbts.Issuer = ctx.FirstTxOutAddress
+	sbts.Issuer = ctx.OperationOutAddress
 	sbts.BlockHeight = ctx.BlockHeight
 	sbts.TransactionIndex = ctx.TxIndex
 	sbts.IssueTransactionHash = ctx.Tx.TxHash().String()
