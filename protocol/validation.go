@@ -8,6 +8,7 @@ import (
 
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
 	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/chaincfg"
 )
 
 // ValidateSymbol validates if the given symbol satisfies the rules
@@ -24,12 +25,12 @@ func ValidateSymbol(symbol string) error {
 }
 
 // ValidateAddress validates if the given address is valid btc address
-func ValidateAddress(addr string) error {
+func ValidateAddress(addr string, netParams *chaincfg.Params) error {
 	if len(addr) == 0 {
 		return fmt.Errorf("address can not be empty")
 	}
 
-	if _, err := btcutil.DecodeAddress(addr, nil); err != nil {
+	if _, err := btcutil.DecodeAddress(addr, netParams); err != nil {
 		return fmt.Errorf("invalid address %s: %v", addr, err)
 	}
 

@@ -16,8 +16,6 @@ type APIService struct {
 	Router *gin.Engine
 
 	Logger *logrus.Logger
-
-	Mode string
 }
 
 // NewAPIService creates a new APIService instance

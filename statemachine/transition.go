@@ -36,7 +36,7 @@ func (sm *StateMachine) HandleOp(ctx *Context, op protocol.Operation) error {
 
 // HandleIssue handles the state transition for the issue operation
 func (sm *StateMachine) HandleIssue(ctx *Context, op *protocol.IssueOperation) error {
-	if err := op.Validate(); err != nil {
+	if err := op.Validate(sm.NetParams); err != nil {
 		return wrapError(InvalidOpErr, err)
 	}
 
@@ -71,7 +71,7 @@ func (sm *StateMachine) HandleIssue(ctx *Context, op *protocol.IssueOperation) e
 
 // HandleMint handles the state transition for the mint operation
 func (sm *StateMachine) HandleMint(ctx *Context, op *protocol.MintOperation) error {
-	if err := op.Validate(); err != nil {
+	if err := op.Validate(sm.NetParams); err != nil {
 		return wrapError(InvalidOpErr, err)
 	}
 

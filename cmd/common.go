@@ -10,9 +10,9 @@ import (
 	"btc-sbt/stacks/basics"
 )
 
-// GetPrivateKeyAndTaprootAddr gets the private key and corresponding taproot address from the given file path
-func GetPrivateKeyAndTaprootAddr(path string, netParam *chaincfg.Params) (*secp256k1.PrivateKey, *btcutil.AddressTaproot, error) {
-	keyWIFBytes, err := os.ReadFile(path)
+// GetPrivateKeyAndAddress gets the private key from the given file path and generates the corresponding address by the given address type
+func GetPrivateKeyAndAddress(keyPath string, addrType basics.AddressType, netParam *chaincfg.Params) (*secp256k1.PrivateKey, btcutil.Address, error) {
+	keyWIFBytes, err := os.ReadFile(keyPath)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -22,10 +22,10 @@ func GetPrivateKeyAndTaprootAddr(path string, netParam *chaincfg.Params) (*secp2
 		return nil, nil, err
 	}
 
-	taprootAddr, err := basics.GetTaprootAddress(keyWIF.PrivKey, netParam)
+	addr, err := basics.GetAddress(keyWIF.PrivKey, addrType, netParam)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return keyWIF.PrivKey, taprootAddr, nil
+	return keyWIF.PrivKey, addr, nil
 }

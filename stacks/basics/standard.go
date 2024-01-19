@@ -18,7 +18,7 @@ const (
 	MIN_STANDARD_TX_NOWITNESS_SIZE = 65
 
 	// minimum padding bytes number in output script to satisfy the minimum tx size requirement
-	MIN_PADDING_SCRIPT_BYTES = 22 // TODO: relax to 5
+	MIN_PADDING_SCRIPT_BYTES = 5
 )
 
 // ValidateTxStandardBasic validates the given tx against two simple standards.

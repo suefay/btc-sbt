@@ -23,13 +23,12 @@ func NewClient(unisatAPI string, baseClient *base.Client) *Client {
 	}
 }
 
-// GetAddressUtxos queries the non-ordinals utxos of the given address
-func (c *Client) GetAddressUtxos(address string) ([]*basics.UTXO, error) {
+// GetBTCUtxos queries the non-inscription utxos of the given address
+func (c *Client) GetBTCUtxos(address string) ([]*basics.UTXO, error) {
 	url := fmt.Sprintf("%s/address/btc-utxo?address=%s", c.UnisatAPI, address)
 
 	opts := c.BaseClient.GetBaseOptions()
 	opts.Headers["X-Client"] = UNISAT_WALLET_CLIENT
-	opts.Headers["X-Version"] = UNISAT_WALLET_VERSION
 
 	statusCode, resp, err := c.BaseClient.Request(http.MethodGet, url, opts)
 	if err != nil {
@@ -40,10 +39,15 @@ func (c *Client) GetAddressUtxos(address string) ([]*basics.UTXO, error) {
 		return nil, fmt.Errorf("failed to query utxos, status code: %d, response: %s", statusCode, string(resp))
 	}
 
-	var r GetUtxosResponse
-	if err := r.UnmarshalJSON(resp); err != nil {
+	var r GetBTCUtxosResponse
+	if err := r.Unmarshal(resp); err != nil {
 		return nil, fmt.Errorf("failed to query utxos: invalid response, err: %v", err)
 	}
 
-	return r.GetUtxos()
+	utxos, err := r.GetUtxos()
+	if err != nil {
+		return nil, fmt.Errorf("failed to query utxos, err: %v", err)
+	}
+
+	return utxos, nil
 }

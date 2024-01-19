@@ -82,13 +82,8 @@ func (p *Parser) ParseIssuerAddress(tx *wire.MsgTx) string {
 
 	pkScript := tx.TxOut[ISSUER_OUTPUT_INDEX].PkScript
 
-	if len(pkScript) > 1 && pkScript[0] == txscript.OP_RETURN {
-		addr, err := btcutil.DecodeAddress(string(pkScript[2:]), p.NetParams)
-		if err != nil {
-			return ""
-		}
-
-		return addr.EncodeAddress()
+	if txscript.IsNullData(pkScript) {
+		return p.parseIssuerAddressFromNullData(pkScript)
 	}
 
 	addr, err := basics.GetAddressFromPkScript(pkScript, p.NetParams)
@@ -97,6 +92,21 @@ func (p *Parser) ParseIssuerAddress(tx *wire.MsgTx) string {
 	}
 
 	return ""
+}
+
+// parseIssuerAddressFromNullData parses the issuer address from the given null data script
+func (p *Parser) parseIssuerAddressFromNullData(nullDataScript []byte) string {
+	if len(nullDataScript) <= 2 {
+		return ""
+	}
+
+	// data push
+	addr, err := btcutil.DecodeAddress(string(nullDataScript[2:]), p.NetParams)
+	if err != nil {
+		return ""
+	}
+
+	return addr.EncodeAddress()
 }
 
 // getOpFromJSON parses the BTC-SBT protocol operation from the given JSON data

@@ -1,6 +1,10 @@
 package initiator
 
 import (
+	"fmt"
+
+	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 
 	"btc-sbt/protocol"
@@ -17,15 +21,20 @@ func GetEnvelopeFromOp(op protocol.Operation) ([]byte, error) {
 }
 
 // GetTxOutFromOp gets the txout from the given operation
-func GetTxOutFromOp(op protocol.Operation, pkScript []byte) *wire.TxOut {
+func GetTxOutFromOp(op protocol.Operation, addr btcutil.Address) (*wire.TxOut, error) {
 	switch op.Type() {
 	case protocol.OP_ISSUE:
-		return wire.NewTxOut(DEFAULT_ISSUE_OUTPUT_VALUE, pkScript)
+		script, err := txscript.NullDataScript([]byte(addr.EncodeAddress()))
+		if err != nil {
+			return nil, fmt.Errorf("failed to get tx out from operation, err: %v", err)
+		}
+
+		return wire.NewTxOut(0, script), nil
 
 	case protocol.OP_MINT:
-		return wire.NewTxOut(0, DEFAULT_MINT_OUTPUT_SCRIPT)
+		return wire.NewTxOut(0, MINT_OUTPUT_SCRIPT_WITH_PROTOCOL), nil
 
 	default:
-		return nil
+		return nil, fmt.Errorf("unsupported operation type: %d", op.Type())
 	}
 }

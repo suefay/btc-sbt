@@ -1,6 +1,8 @@
 package indexer
 
 import (
+	"github.com/btcsuite/btcd/chaincfg"
+
 	"btc-sbt/types"
 )
 
@@ -32,4 +34,9 @@ func (i *Indexer) GetOwnedSBT(owner string, symbol string) (*types.CompactSBT, e
 // GetStatus returns the current status of the indexer
 func (i *Indexer) GetStatus() (any, error) {
 	return i.GetLastBlockHeight()
+}
+
+// GetNetParams returns the net params used for the indexer
+func (i *Indexer) GetNetParams() *chaincfg.Params {
+	return i.NetParams
 }

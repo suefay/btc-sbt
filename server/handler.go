@@ -28,7 +28,7 @@ func (srv *APIService) GetSBTs(c *gin.Context) {
 		return
 	}
 
-	if err := p.Validate(c); err != nil {
+	if err := p.Validate(c, srv.GetNetParams()); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": false, "error": fmt.Sprintf("invalid params: %v", err)})
 		return
 	}
@@ -55,7 +55,7 @@ func (srv *APIService) GetSBT(c *gin.Context) {
 		return
 	}
 
-	if err := p.Validate(c); err != nil {
+	if err := p.Validate(c, srv.GetNetParams()); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": false, "error": fmt.Sprintf("invalid params: %v", err)})
 		return
 	}
@@ -97,7 +97,7 @@ func (srv *APIService) GetOwnedSBTs(c *gin.Context) {
 		return
 	}
 
-	if err := p.Validate(c); err != nil {
+	if err := p.Validate(c, srv.GetNetParams()); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": false, "error": fmt.Sprintf("invalid params: %v", err)})
 		return
 	}
@@ -125,7 +125,7 @@ func (srv *APIService) GetOwnedSBT(c *gin.Context) {
 		return
 	}
 
-	if err := p.Validate(c); err != nil {
+	if err := p.Validate(c, srv.GetNetParams()); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": false, "error": fmt.Sprintf("invalid params: %v", err)})
 		return
 	}

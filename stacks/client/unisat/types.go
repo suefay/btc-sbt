@@ -2,10 +2,8 @@ package unisat
 
 import (
 	"encoding/hex"
-	"errors"
+	"encoding/json"
 	"fmt"
-
-	"github.com/tidwall/gjson"
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 
@@ -13,54 +11,51 @@ import (
 )
 
 const UNISAT_WALLET_CLIENT = "UniSat Wallet"
-const UNISAT_WALLET_VERSION = "v1.1.33"
 
-const STATUS_SUCCESS = "1"
+// UTXO represents the UTXO struct for unisat api
+type UTXO struct {
+	TxId        string `json:"txid"`
+	Vout        uint32 `json:"vout"`
+	Value       int64  `json:"satoshis"`
+	PkScript    string `json:"scriptPk"`
+	AddressType uint8  `json:"addressType"`
+	Height      int64  `json:"height"`
+}
 
-// GetUtxosResponse defines the response struct for the utxos request
-type GetUtxosResponse struct {
-	Status  string       `json:"status"`
-	Message string       `json:"message"`
-	Result  gjson.Result `json:"result"`
+// GetBTCUtxosResponse defines the response struct for the GetBTCUtxos request
+type GetBTCUtxosResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"msg"`
+	Data    []UTXO `json:"data"`
 }
 
 // GetUtxos gets the utxos from the response
-func (r GetUtxosResponse) GetUtxos() ([]*basics.UTXO, error) {
-	if r.Status == STATUS_SUCCESS {
+func (r GetBTCUtxosResponse) GetUtxos() ([]*basics.UTXO, error) {
+	if r.Code == 0 {
 		utxos := make([]*basics.UTXO, 0)
 
-		for _, result := range r.Result.Array() {
-			hash, err := chainhash.NewHashFromStr(result.Get("txId").String())
+		for _, utxo := range r.Data {
+			hash, err := chainhash.NewHashFromStr(utxo.TxId)
 			if err != nil {
-				return nil, fmt.Errorf("failed to query utxos: invalid tx hash")
+				return nil, fmt.Errorf("invalid response: invalid tx hash")
 			}
 
-			scriptPk, err := hex.DecodeString(result.Get("scriptPk").String())
+			pkScript, err := hex.DecodeString(utxo.PkScript)
 			if err != nil {
-				return nil, fmt.Errorf("failed to query utxos: invalid pk script")
+				return nil, fmt.Errorf("invalid response: invalid pk script")
 			}
 
-			utxo := basics.NewUTXO(hash, uint32(result.Get("outputIndex").Uint()), result.Get("satoshis").Int(), scriptPk)
+			utxo := basics.NewUTXO(hash, utxo.Vout, utxo.Value, pkScript)
 			utxos = append(utxos, utxo)
 		}
 
 		return utxos, nil
 	}
 
-	return nil, fmt.Errorf("failed to query utxos, err: %v", r.Message[0:20])
+	return nil, fmt.Errorf("%v", r.Message)
 }
 
-// UnmarshalJSON unmarshals the given data to the GetUtxosResponse struct
-func (r *GetUtxosResponse) UnmarshalJSON(data []byte) error {
-	if !gjson.ValidBytes(data) {
-		return errors.New("invalid JSON")
-	}
-
-	json := gjson.ParseBytes(data)
-
-	r.Status = json.Get("status").String()
-	r.Message = json.Get("message").String()
-	r.Result = json.Get("result")
-
-	return nil
+// Unmarshal unmarshals the given data to the GetBTCUtxosResponse struct
+func (r *GetBTCUtxosResponse) Unmarshal(data []byte) error {
+	return json.Unmarshal(data, r)
 }

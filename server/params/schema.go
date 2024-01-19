@@ -5,6 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/btcsuite/btcd/chaincfg"
+
 	"btc-sbt/protocol"
 )
 
@@ -20,7 +22,7 @@ type GetSBTsParams struct {
 }
 
 // Validate implements the Validator interface
-func (p *GetSBTsParams) Validate(c *gin.Context) error {
+func (p *GetSBTsParams) Validate(c *gin.Context, netParams *chaincfg.Params) error {
 	return protocol.ValidateSymbol(p.Symbol)
 }
 
@@ -31,7 +33,7 @@ type GetSBTParams struct {
 }
 
 // Validate implements the Validator interface
-func (p *GetSBTParams) Validate(c *gin.Context) error {
+func (p *GetSBTParams) Validate(c *gin.Context, netParams *chaincfg.Params) error {
 	if err := protocol.ValidateSymbol(p.Symbol); err != nil {
 		return err
 	}
@@ -50,7 +52,7 @@ type GetOwnedSBTsWrapperParams struct {
 }
 
 // Validate implements the Validator interface
-func (p *GetOwnedSBTsWrapperParams) Validate(c *gin.Context) error {
+func (p *GetOwnedSBTsWrapperParams) Validate(c *gin.Context, netParams *chaincfg.Params) error {
 	// defer validation to concrete handler
 	return nil
 }
@@ -66,8 +68,8 @@ type GetOwnedSBTsParams struct {
 }
 
 // Validate implements the Validator interface
-func (p *GetOwnedSBTsParams) Validate(c *gin.Context) error {
-	return protocol.ValidateAddress(p.Address)
+func (p *GetOwnedSBTsParams) Validate(c *gin.Context, netParams *chaincfg.Params) error {
+	return protocol.ValidateAddress(p.Address, netParams)
 }
 
 // GetOwnedSBTParams represents the params for the GetOwnedSBT handler
@@ -77,8 +79,8 @@ type GetOwnedSBTParams struct {
 }
 
 // Validate implements the Validator interface
-func (p *GetOwnedSBTParams) Validate(c *gin.Context) error {
-	if err := protocol.ValidateAddress(p.Address); err != nil {
+func (p *GetOwnedSBTParams) Validate(c *gin.Context, netParams *chaincfg.Params) error {
+	if err := protocol.ValidateAddress(p.Address, netParams); err != nil {
 		return err
 	}
 

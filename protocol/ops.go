@@ -4,8 +4,13 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/btcsuite/btcd/chaincfg"
+
 	"btc-sbt/utils"
 )
+
+var _ Operation = (*IssueOperation)(nil)
+var _ Operation = (*MintOperation)(nil)
 
 // OpType represents the protocol operation type
 type OpType uint8
@@ -51,7 +56,13 @@ func (ot OpType) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements json.Unmarshaler
 func (ot *OpType) UnmarshalJSON(data []byte) error {
-	*ot = FromStringToOpType(string(data))
+	var str string
+	err := json.Unmarshal(data, &str)
+	if err != nil {
+		return err
+	}
+
+	*ot = FromStringToOpType(str)
 
 	return nil
 }
@@ -59,7 +70,7 @@ func (ot *OpType) UnmarshalJSON(data []byte) error {
 // Operation abstracts the protocol operation
 type Operation interface {
 	Type() OpType
-	Validate() error
+	Validate(netParams *chaincfg.Params) error
 	Marshal() ([]byte, error)
 	Unmarshal(data []byte) error
 }
@@ -92,7 +103,7 @@ func (op IssueOperation) Type() OpType {
 }
 
 // Validate validates the issue operation
-func (op *IssueOperation) Validate() error {
+func (op *IssueOperation) Validate(netParams *chaincfg.Params) error {
 	if err := ValidateSymbol(op.Symbol); err != nil {
 		return err
 	}
@@ -148,12 +159,12 @@ func (op MintOperation) Type() OpType {
 }
 
 // Validate validates the issue operation
-func (op *MintOperation) Validate() error {
+func (op *MintOperation) Validate(netParams *chaincfg.Params) error {
 	if err := ValidateSymbol(op.Symbol); err != nil {
 		return err
 	}
 
-	if err := ValidateAddress(op.Owner); err != nil {
+	if err := ValidateAddress(op.Owner, netParams); err != nil {
 		return err
 	}
 

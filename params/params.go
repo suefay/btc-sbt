@@ -23,7 +23,7 @@ var (
 		ActivationBlockHeight: 2570700,
 	}
 
-	// SignetParams is the params for the signet network
+	// SigNetParams is the params for the signet network
 	SigNetParams = Params{
 		ActivationBlockHeight: 176800,
 	}

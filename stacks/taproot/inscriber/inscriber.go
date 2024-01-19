@@ -12,6 +12,7 @@ import (
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 
 	"btc-sbt/stacks/basics"
+	"btc-sbt/stacks/signer"
 	"btc-sbt/stacks/taproot"
 )
 
@@ -31,7 +32,7 @@ func NewInscriber(rpcClient *rpcclient.Client, netParams *chaincfg.Params) *Insc
 }
 
 // Inscribe performs the inscribing process which consists of two phases named commit and reveal
-func (i *Inscriber) Inscribe(commitKey *secp256k1.PrivateKey, commitAddress *btcutil.AddressTaproot, commitUtxos []*basics.UTXO, envelope []byte, revealTxOuts []*wire.TxOut, feeRate int64) (*chainhash.Hash, *chainhash.Hash, error) {
+func (i *Inscriber) Inscribe(commitKey *secp256k1.PrivateKey, commitAddress btcutil.Address, commitUtxos []*basics.UTXO, envelope []byte, revealTxOuts []*wire.TxOut, feeRate int64) (*chainhash.Hash, *chainhash.Hash, error) {
 	commitOutWIF, commitOutAddress, err := taproot.GenerateTapscriptCommitOutAddress(envelope, i.netParams)
 	if err != nil {
 		return nil, nil, err
@@ -87,7 +88,7 @@ func (i *Inscriber) buildCommitTx(key *secp256k1.PrivateKey, commitAddress btcut
 		return nil, fmt.Errorf("failed to build commit tx: %v", err)
 	}
 
-	if err := i.signCommitTx(key, tx, utxos, txscript.SigHashDefault); err != nil {
+	if err := i.signCommitTx(key, commitAddress, tx, utxos); err != nil {
 		return nil, fmt.Errorf("failed to build commit tx: %v", err)
 	}
 
@@ -124,22 +125,30 @@ func (i *Inscriber) buildDummyRevealTx(pubKey *secp256k1.PublicKey, script []byt
 func (i *Inscriber) populateDummyRevealTx(key *secp256k1.PrivateKey, revealTx *wire.MsgTx, commitTxOutPoint wire.OutPoint, commitTxOut *wire.TxOut) error {
 	revealTx.TxIn[0].PreviousOutPoint = commitTxOutPoint
 
-	if err := i.signRevealTx(key, revealTx, commitTxOut, txscript.SigHashDefault); err != nil {
+	if err := i.signRevealTx(key, revealTx, commitTxOut); err != nil {
 		return fmt.Errorf("failed to populate reveal tx: %v", err)
 	}
 
 	return nil
 }
 
-func (i *Inscriber) signCommitTx(key *secp256k1.PrivateKey, tx *wire.MsgTx, utxos []*basics.UTXO, hashType txscript.SigHashType) error {
-	return taproot.SignTaprootTransaction(key, tx, utxos, hashType)
+func (i *Inscriber) signCommitTx(key *secp256k1.PrivateKey, addr btcutil.Address, tx *wire.MsgTx, utxos []*basics.UTXO) error {
+	switch addr.(type) {
+	case *btcutil.AddressTaproot:
+		return taproot.SignTaprootTransaction(key, tx, utxos, txscript.SigHashDefault)
+
+	case *btcutil.AddressWitnessPubKeyHash:
+		return signer.SignWitnessTransaction(key, tx, utxos, txscript.SigHashAll)
+	}
+
+	return fmt.Errorf("unsupported address type: %t, only Taproot and Native Segwit supported", addr)
 }
 
-func (i *Inscriber) signRevealTx(key *secp256k1.PrivateKey, tx *wire.MsgTx, commitTxOut *wire.TxOut, hashType txscript.SigHashType) error {
+func (i *Inscriber) signRevealTx(key *secp256k1.PrivateKey, tx *wire.MsgTx, commitTxOut *wire.TxOut) error {
 	revealScript := tx.TxIn[0].Witness[1]
 	utxo := &basics.UTXO{Value: commitTxOut.Value, PkScript: commitTxOut.PkScript}
 
-	signature, err := taproot.SignTapscript(key, tx, []*basics.UTXO{utxo}, 0, revealScript, hashType)
+	signature, err := taproot.SignTapscript(key, tx, []*basics.UTXO{utxo}, 0, revealScript, txscript.SigHashDefault)
 	if err != nil {
 		return err
 	}

@@ -1,6 +1,7 @@
 package ordinals
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -23,6 +24,35 @@ func NewClient(indexerAPI string, baseClient *base.Client) *Client {
 	return &Client{
 		BaseClient: baseClient,
 		IndexerAPI: indexerAPI,
+	}
+}
+
+// GetInscription gets the given inscription
+func (c *Client) GetInscription(id string) (*Inscription, error) {
+	url := fmt.Sprintf("%s/inscription/%s", c.IndexerAPI, id)
+
+	opts := c.BaseClient.GetBaseOptions()
+	opts.Headers["Accept"] = HTTP_HEADER_ACCEPT_JSON
+
+	statusCode, resp, err := c.BaseClient.Request(http.MethodGet, url, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query the inscription, err: %v", err)
+	}
+
+	switch statusCode {
+	case http.StatusOK:
+		var i Inscription
+		if err := json.Unmarshal(resp, &i); err != nil {
+			return nil, fmt.Errorf("failed to query the inscription: invalid response, err: %v", err)
+		}
+
+		return &i, nil
+
+	case http.StatusNotFound:
+		return nil, nil
+
+	default:
+		return nil, fmt.Errorf("failed to query the inscription, status code: %d, response: %s", statusCode, string(resp))
 	}
 }
 
@@ -69,8 +99,8 @@ func (c *Client) GetInscriptionsByOutput(output *wire.OutPoint) ([]string, error
 
 	switch statusCode {
 	case http.StatusOK:
-		var r GetInscriptionsResponse
-		if err := r.UnmarshalJSON(resp); err != nil {
+		var r GetInscriptionsByOutputResponse
+		if err := r.Unmarshal(resp); err != nil {
 			return nil, fmt.Errorf("failed to query inscriptions by output: invalid response, err: %v", err)
 		}
 

@@ -2,6 +2,8 @@ package server
 
 import (
 	"btc-sbt/types"
+
+	"github.com/btcsuite/btcd/chaincfg"
 )
 
 // APIBackend defines the backend interface for the api server
@@ -15,4 +17,6 @@ type APIBackend interface {
 	GetOwnedSBT(owner string, symbol string) (*types.CompactSBT, error)
 
 	GetStatus() (any, error)
+
+	GetNetParams() *chaincfg.Params
 }

@@ -6,13 +6,16 @@ import (
 	cfg "btc-sbt/config"
 	"btc-sbt/initiator"
 	"btc-sbt/protocol"
+	"btc-sbt/stacks/basics"
 )
 
 func GetMintCmd() *cobra.Command {
+	var addrType uint8
+
 	cmd := &cobra.Command{
-		Use:     "mint <symbol> <authsig> <metadata> [config-file]",
+		Use:     "mint <symbol> <auth sig> <metadata> [flags] [config-file]",
 		Short:   "Mint BTC SBT",
-		Example: `btc-sbt mint sbt 0x123456 '{"level":1}' [config-file]`,
+		Example: `btc-sbt mint sbt 0x123456 '{"attributes":[{"trait_type":"Level","value":"1"}]}'`,
 		Args:    cobra.RangeArgs(3, 4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			configFileName := ""
@@ -38,14 +41,14 @@ func GetMintCmd() *cobra.Command {
 				return err
 			}
 
-			key, taprootAddr, err := GetPrivateKeyAndTaprootAddr(config.KeyStorePath, initiator.NetParams)
+			key, addr, err := GetPrivateKeyAndAddress(config.KeyStorePath, basics.AddressType(addrType), initiator.NetParams)
 			if err != nil {
 				return err
 			}
 
-			op := protocol.NewMintOperation(args[0], taprootAddr.EncodeAddress(), args[1], args[2])
+			op := protocol.NewMintOperation(args[0], addr.EncodeAddress(), args[1], args[2])
 
-			commitTxHash, revealTxHash, err := initiator.Initiate(key, op)
+			commitTxHash, revealTxHash, err := initiator.Initiate(key, addr, op)
 			if err != nil {
 				return err
 			}
@@ -55,6 +58,8 @@ func GetMintCmd() *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().Uint8VarP(&addrType, "addr-type", "a", 0, "address type; 0: taproot, 1: p2wpkh; default to taproot")
 
 	return cmd
 }
